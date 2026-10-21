@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#FF7A00">
+<title>Genesis Lab Pazienti</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --orange:#FF7A00;
+    --orange-2:#FF9326;
+    --orange-soft:#FFF1E3;
+    --orange-line:#FFD9B3;
+    --ink:#2A2119;
+    --muted:#8B7A69;
+  }
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    background:#FFFBF6;color:var(--ink);min-height:100vh;
+  }
+
+  /* ---------- HEADER ---------- */
+  header{
+    position:sticky;top:0;z-index:20;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    padding:14px 22px;background:#fff;
+    border-bottom:2px solid var(--orange-soft);
+    box-shadow:0 2px 12px rgba(255,122,0,.07);
+  }
+  .brand{display:flex;flex-direction:column;line-height:1.15}
+  .logo{font-size:20px;font-weight:800;color:var(--orange);letter-spacing:-.3px;white-space:nowrap}
+  .logo span{font-weight:500;color:#C08A54}
+  .count{font-size:12px;color:var(--muted);margin-top:2px;font-weight:600}
+
+  .search-box{position:relative;flex:1;min-width:180px;max-width:520px;margin:0 auto}
+  .search-box svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#D9A26B;pointer-events:none}
+  .search-box input{
+    width:100%;padding:11px 14px 11px 40px;font-size:14px;
+    border:1.5px solid var(--orange-line);border-radius:12px;
+    background:#fff;color:var(--ink);outline:none;font-family:inherit;
+    transition:.2s;
+  }
+  .search-box input::placeholder{color:#C4AE99}
+  .search-box input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,122,0,.14)}
+
+  .add-btn{
+    width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;
+    background:linear-gradient(145deg,var(--orange-2),var(--orange));
+    color:#fff;font-size:26px;line-height:1;display:grid;place-items:center;
+    box-shadow:0 6px 16px rgba(255,122,0,.35);
+    transition:transform .15s,box-shadow .15s;flex-shrink:0;
+  }
+  .add-btn:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 10px 22px rgba(255,122,0,.45)}
+  .add-btn:active{transform:scale(.96)}
+
+  /* ---------- GRIGLIA ---------- */
+  main{padding:26px 22px 60px;max-width:1400px;margin:0 auto}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px}
+  .card{
+    background:#fff;border:1.5px solid var(--orange-soft);border-radius:16px;
+    padding:18px;display:flex;flex-direction:column;gap:14px;
+    transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.03);
+  }
+  .card:hover{border-color:var(--orange-line);box-shadow:0 10px 26px rgba(255,122,0,.13);transform:translateY(-2px)}
+  .card-top{display:flex;gap:12px;align-items:center}
+  .avatar{
+    width:46px;height:46px;border-radius:50%;background:var(--orange-soft);
+    color:var(--orange);font-weight:800;display:grid;place-items:center;
+    font-size:16px;flex-shrink:0;
+  }
+  .card-title h3{font-size:16px;font-weight:700;line-height:1.2}
+  .cf{font-size:11.5px;color:var(--orange);font-weight:700;letter-spacing:.5px}
+  .info{
+    display:flex;flex-direction:column;gap:7px;font-size:13px;
+    border-top:1px dashed var(--orange-line);padding-top:12px;
+  }
+  .row{display:flex;gap:8px}
+  .lbl{
+    color:var(--muted);min-width:76px;flex-shrink:0;font-weight:700;
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;padding-top:2px;
+  }
+  .val{word-break:break-word}
+  .card-actions{display:flex;gap:8px;margin-top:auto}
+  .btn-edit,.btn-del{
+    flex:1;padding:9px;border-radius:10px;font-size:13px;font-weight:700;
+    cursor:pointer;border:1.5px solid var(--orange-line);background:#fff;
+    color:var(--orange);transition:.15s;font-family:inherit;
+  }
+  .btn-edit:hover{background:var(--orange);color:#fff;border-color:var(--orange)}
+  .btn-del{color:#C94B2B;border-color:#FFD2C6}
+  .btn-del:hover{background:#C94B2B;color:#fff;border-color:#C94B2B}
+
+  .empty{
+    display:none;text-align:center;padding:70px 20px;color:var(--muted);
+    font-size:15px;line-height:1.7;
+  }
+  .empty b{display:block;font-size:38px;color:var(--orange-line);margin-bottom:10px}
+
+  /* ---------- MODALE ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;z-index:100;display:none;
+    align-items:center;justify-content:center;padding:20px;
+    background:rgba(48,30,12,.45);backdrop-filter:blur(2px);overflow-y:auto;
+  }
+  .modal-overlay.open{display:flex}
+  .modal{
+    background:#fff;border-radius:18px;width:100%;max-width:640px;
+    padding:26px;max-height:92vh;overflow-y:auto;
+    box-shadow:0 24px 70px rgba(0,0,0,.25);
+    animation:pop .18s ease-out;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+  .modal h2{
+    font-size:19px;font-weight:800;margin-bottom:22px;
+    padding-left:14px;border-left:4px solid var(--orange);line-height:1.25;
+  }
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field.full{grid-column:1/-1}
+  .field label{font-size:12px;font-weight:700;color:#7A6552;letter-spacing:.2px}
+  .field input{
+    border:1.5px solid var(--orange-line);border-radius:10px;
+    padding:10px 12px;font-size:14px;outline:none;font-family:inherit;
+    background:#fff;color:var(--ink);transition:.2s;width:100%;
+  }
+  .field input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,122,0,.14)}
+  #f-cf{text-transform:uppercase;letter-spacing:1px}
+  .modal-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:24px}
+  .btn-cancel{
+    padding:11px 20px;border-radius:11px;border:1.5px solid var(--orange-line);
+    background:#fff;color:var(--muted);font-weight:700;cursor:pointer;
+    font-size:14px;font-family:inherit;transition:.15s;
+  }
+  .btn-cancel:hover{background:var(--orange-soft);color:var(--orange);border-color:var(--orange-line)}
+  .btn-save{
+    padding:11px 26px;border-radius:11px;border:none;cursor:pointer;
+    background:linear-gradient(145deg,var(--orange-2),var(--orange));
+    color:#fff;font-weight:800;font-size:14px;font-family:inherit;
+    box-shadow:0 6px 16px rgba(255,122,0,.32);transition:.15s;
+  }
+  .btn-save:hover{filter:brightness(1.06);transform:translateY(-1px)}
+
+  /* ---------- MOBILE ---------- */
+  @media(max-width:640px){
+    header{padding:12px 14px;gap:12px}
+    .logo{font-size:17px}
+    .search-box{order:3;flex-basis:100%;max-width:none;margin:0}
+    .add-btn{margin-left:auto}
+    main{padding:18px 14px 50px}
+    .grid{grid-template-columns:1fr}
+    .form-grid{grid-template-columns:1fr}
+    .modal{padding:20px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">Genesis lab <span>pazienti</span></div>
+    <div class="count" id="count"></div>
+  </div>
+
+  <div class="search-box">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="21" y2="21"></line>
+    </svg>
+    <input type="text" id="search" placeholder="Cerca per nome, cognome, codice fiscale, email…">
+  </div>
+
+  <button class="add-btn" id="addBtn" title="Nuova scheda paziente" aria-label="Nuova scheda paziente">+</button>
+</header>
+
+<main>
+  <div class="grid" id="list"></div>
+  <div class="empty" id="empty"></div>
+</main>
+
+<!-- MODALE NUOVA / MODIFICA -->
+<div class="modal-overlay" id="modal">
+  <form class="modal" id="form" novalidate>
+    <h2 id="modalTitle">Nuova scheda paziente</h2>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="f-nome">Nome *</label>
+        <input id="f-nome" name="nome" autocomplete="off" required>
+      </div>
+      <div class="field">
+        <label for="f-cognome">Cognome *</label>
+        <input id="f-cognome" name="cognome" autocomplete="off" required>
+      </div>
+      <div class="field">
+        <label for="f-data">Data di nascita</label>
+        <input id="f-data" name="dataNascita" type="date">
+      </div>
+      <div class="field">
+        <label for="f-luogo">Luogo di nascita</label>
+        <input id="f-luogo" name="luogoNascita" autocomplete="off">
+      </div>
+      <div class="field full">
+        <label for="f-via">Via di casa</label>
+        <input id="f-via" name="via" autocomplete="off" placeholder="Via, numero civico, CAP">
+      </div>
+      <div class="field">
+        <label for="f-paese">Paese di residenza</label>
+        <input id="f-paese" name="paese" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="f-email">Email</label>
+        <input id="f-email" name="email" type="email" autocomplete="off">
+      </div>
+      <div class="field full">
+        <label for="f-cf">Codice fiscale</label>
+        <input id="f-cf" name="cf" maxlength="16" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" id="cancelBtn">Annulla</button>
+      <button type="submit" class="btn-save">Salva scheda</button>
+    </div>
+  </form>
+</div>
+
+<script>
+/* ================= DATI ================= */
+const KEY = 'genesis_lab_pazienti_v1';
+const FIELDS = ['nome','cognome','dataNascita','luogoNascita','via','paese','email','cf'];
+
+const listEl   = document.getElementById('list');
+const emptyEl  = document.getElementById('empty');
+const searchEl = document.getElementById('search');
+const countEl  = document.getElementById('count');
+const overlay  = document.getElementById('modal');
+const form     = document.getElementById('form');
+const titleEl  = document.getElementById('modalTitle');
+
+let patients  = load();
+let editingId = null;
+
+function load(){
+  try { return JSON.parse(localStorage.getItem(KEY)) || []; }
+  catch(e){ return []; }
+}
+function save(){
+  localStorage.setItem(KEY, JSON.stringify(patients));
+}
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+function formatDate(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return (y && m && d) ? `${d}/${m}/${y}` : iso;
+}
+function initials(p){
+  const n = (p.nome || ' ').trim()[0] || '';
+  const c = (p.cognome || ' ').trim()[0] || '';
+  return (n + c).toUpperCase() || '?';
+}
+
+/* ================= RENDER ================= */
+function render(){
+  const q = searchEl.value.trim().toLowerCase();
+
+  const filtered = patients
+    .filter(p => !q || FIELDS.map(f => p[f] || '').join(' ').toLowerCase().includes(q))
+    .sort((a,b) => (a.cognome + ' ' + a.nome).localeCompare(b.cognome + ' ' + b.nome, 'it'));
+
+  countEl.textContent = patients.length === 1 ? '1 paziente' : patients.length + ' pazienti';
+
+  if(!filtered.length){
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    emptyEl.innerHTML = patients.length
+      ? '<b>⌕</b>Nessun risultato per questa ricerca.'
+      : '<b>+</b>Nessun paziente registrato.<br>Premi il pulsante <b style="display:inline;font-size:inherit;color:var(--orange)">+</b> in alto per creare la prima scheda.';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  listEl.innerHTML = filtered.map(cardHTML).join('');
+}
+
+function cardHTML(p){
+  const rows = [];
+  if(p.dataNascita || p.luogoNascita){
+    rows.push(['Nato', [formatDate(p.dataNascita), p.luogoNascita].filter(Boolean).join(' · ')]);
+  }
+  if(p.via)   rows.push(['Indirizzo', p.via]);
+  if(p.paese) rows.push(['Residenza', p.paese]);
+  if(p.email) rows.push(['Email', p.email]);
+
+  const infoHTML = rows.length
+    ? `<div class="info">${rows.map(([k,v]) =>
+        `<div class="row"><span class="lbl">${k}</span><span class="val">${esc(v)}</span></div>`
+      ).join('')}</div>`
+    : '';
+
+  return `
+    <article class="card">
+      <div class="card-top">
+        <div class="avatar">${esc(initials(p))}</div>
+        <div class="card-title">
+          <h3>${esc(p.nome)} ${esc(p.cognome)}</h3>
+          ${p.cf ? `<span class="cf">${esc(p.cf)}</span>` : ''}
+        </div>
+      </div>
+      ${infoHTML}
+      <div class="card-actions">
+        <button class="btn-edit" data-id="${p.id}">Modifica</button>
+        <button class="btn-del"  data-id="${p.id}">Elimina</button>
+      </div>
+    </article>`;
+}
+
+/* ================= MODALE ================= */
+function openModal(p = null){
+  editingId = p ? p.id : null;
+  titleEl.textContent = p ? 'Modifica scheda paziente' : 'Nuova scheda paziente';
+  form.reset();
+
+  if(p){
+    FIELDS.forEach(k => {
+      const el = form.elements[k];
+      if(el) el.value = p[k] || '';
+    });
+  }
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => form.elements.nome.focus(), 60);
+}
+
+function closeModal(){
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  editingId = null;
+}
+
+/* ================= EVENTI ================= */
+document.getElementById('addBtn').addEventListener('click', () => openModal());
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+searchEl.addEventListener('input', render);
+
+overlay.addEventListener('mousedown', e => {
+  if(e.target === overlay) closeModal();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && overlay.classList.contains('open')) closeModal();
+});
+
+/* click su Modifica / Elimina */
+listEl.addEventListener('click', e => {
+  const btn = e.target.closest('button[data-id]');
+  if(!btn) return;
+
+  const id = btn.dataset.id;
+  const p  = patients.find(x => x.id === id);
+  if(!p) return;
+
+  if(btn.classList.contains('btn-edit')){
+    openModal(p);
+  } else if(btn.classList.contains('btn-del')){
+    if(confirm(`Eliminare la scheda di ${p.nome} ${p.cognome}?`)){
+      patients = patients.filter(x => x.id !== id);
+      save();
+      render();
+    }
+  }
+});
+
+/* salvataggio */
+form.addEventListener('submit', e => {
+  e.preventDefault();
+
+  const data = {};
+  FIELDS.forEach(k => {
+    const el = form.elements[k];
+    data[k] = (el ? el.value : '').trim();
+  });
+  data.cf = data.cf.toUpperCase();
+
+  if(!data.nome || !data.cognome){
+    alert('Nome e Cognome sono obbligatori.');
+    form.elements.nome.focus();
+    return;
+  }
+
+  if(editingId){
+    const i = patients.findIndex(p => p.id === editingId);
+    if(i > -1) patients[i] = { ...patients[i], ...data };
+  } else {
+    patients.push({
+      id: String(Date.now()) + Math.random().toString(16).slice(2, 6),
+      ...data
+    });
+  }
+
+  save();
+  render();
+  closeModal();
+});
+
+/* ================= AVVIO ================= */
+render();
+</script>
+</body>
+</html>
